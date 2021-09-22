@@ -4,6 +4,14 @@ function idle(ms) {
   return new Promise((resolve, reject) => setTimeout(()=>resolve(), ms));
 }
 
+const keypress = () => {
+  process.stdin.setRawMode(true)
+  return new Promise(resolve => process.stdin.once('data', () => {
+    process.stdin.setRawMode(false)
+    resolve()
+  }))
+}
+
 (async () => {
   const browser = await chromium.launch({
     headless: false
@@ -51,7 +59,7 @@ function idle(ms) {
   console.log(subs);
 
   //for (let row=1; row < nRows; row++) {
-  for (let row of [4]) {
+  for (let row of [2,4]) {//DEBUG
     console.log(`Going into row ${row} ${subs[row-1].name}`);
     await page.frame({
       name: 'TargetContent'
@@ -64,7 +72,7 @@ function idle(ms) {
     await page.waitForEvent('requestfinished');
     console.log("选择 requestfinished");
 
-    // Get absence records
+    // Get absence records begin
     /*
     await page.frame({
       name: 'TargetContent'
@@ -84,7 +92,7 @@ function idle(ms) {
     }).click('a[id="GP_ABSHISTSS_VW$hviewall$0"]:has-text("全部查看")', {timeout:1000}).then( async ()=>{
       console.log("Has 全部查看 indeed.");
       await page.waitForEvent('requestfinished');
-      await idle(1000); // why?
+      await idle(1000); //DEBUG why?
     }, ()=>{
       console.log("No 全部查看.");
     });
@@ -103,19 +111,18 @@ function idle(ms) {
     console.log(`TA有${nAbsRows-1}個请假记录`);
 
     // Get details of 请假记录 Begin
-    for (let r=2; r <= nAbsRows; r++) {
+    for (let r=2; r <= nAbsRows && r<=4; r++) {//DEBUG
       const applicant = await page.frame({name: 'TargetContent'}).innerText(`table.PSLEVEL1GRID tr:nth-child(${r}) td:nth-child(6)`);
-      console.log(`${applicant}`);
+      //console.log(`${applicant}`);
       await page.frame({name: 'TargetContent'}).click(`table.PSLEVEL1GRID tr:nth-child(${r}) td:nth-child(1) a`);
 
+      // Get the desired iframe name
       const frnm = await new Promise(function(resolve, reject) {
         const frmnvg = frame => {
           frame.frameElement().then(ele => {
             ele.getAttribute("name").then(fn => {
-              //const fn = attr;
               console.log(`framenavigated ${fn}`);
               if ( fn.indexOf("ptModFrame_") === 0 ) {
-                //frnm = fn;
                 page.removeListener('framenavigated', frmnvg);
                 resolve(fn);
               }
@@ -142,16 +149,37 @@ function idle(ms) {
       const 理由 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_COMMENTS`);          // 家中有事
       const 状态 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_WF_STATUS`);         // 已批准
 
-      console.log(`${applicant} ${who} ${假别名称} ${开始日期} ${开始时间} ~ ${结束日期} ${结束时间} ${总计时数} 小时 ${代理人} ${理由} ${状态}`);
-      // Get 签核历程
+      // Get 签核历程 BEGIN
+      /**
+       * 	Unexpected:
+签核状态	  Step	  姓名	  Action DateTime	  Approver Comments	  
+已提交  Applicant 冼策 (CE XIAN)  21/06/04 15:37:23 旅游
+已修改  Applicant 冼策 (CE XIAN)  21/06/04 16:44:59 旅游
+已批准  Leave_Agent 李超 (LANCE LI) 21/06/04 16:47:43
+已批准  OC_L1Supervisor 黃世勇 (ALEX HUANG) 21/06/06 22:17:37
+       */
+      let t1 = "" // Applicant time
+      , t2 = ""   // Proxy time
+      , t3 = "";  // Approver time
+      const nApvCnt = await page.frame({name: frnm}).locator("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr").count();
+      //console.log(`TA有${nApvCnt}個签核历程`);
+      if (nApvCnt === 3) {
+        t1 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(1) td:nth-child(4)");
+        t2 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(2) td:nth-child(4)");
+        t3 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(3) td:nth-child(4)");
+      }
+      // Get 签核历程 END
+      console.log(`${applicant} ${who} ${假别名称} ${开始日期} ${开始时间} ~ ${结束日期} ${结束时间} ${总计时数} 小时 ${代理人} ${理由} ${状态} ${t1} ${t2} ${t3}`);
+
       await page.frame({name: frnm}).click(`a[id="DERIVED_ABS_SS_LINK"]`);  // 返回请假纪录
       await page.waitForEvent('requestfinished');
       console.log("返回请假纪录 requestfinished");
     }
     // Get details of 请假记录 End
-
-    await idle(30000);
-    // Get absence records
+    console.log("Press any key to continue...");
+    await keypress();
+    //await idle(30000);
+    // Get absence records end
 
     // Click text=返回到“直接报告者”
     await page.frame({
