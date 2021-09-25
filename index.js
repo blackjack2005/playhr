@@ -1,4 +1,5 @@
 const { chromium } = require('playwright');
+const fs = require('fs');
 
 function idle(ms) {
   return new Promise((resolve, reject) => setTimeout(()=>resolve(), ms));
@@ -32,7 +33,8 @@ const keypress = () => {
   await page.click('input[name="Submit"]');
   await idle(5000);
   // Click text=请假记录查询
-  await page.goto("https://hr.wistron.com/psp/PRD/EMPLOYEE/HRMS/c/ROLE_MANAGER.GP_ABS_MGRSS_HIST.GBL?NAVSTACK=Clear&PORTALPARAM_PTCNAV=HC_GP_ABS_MGRSS_HIST_GBL&EOPP.SCNode=HRMS&EOPP.SCPortal=EMPLOYEE&EOPP.SCName=ADMN_REVIEW_AND_APPROVAL_WSH&EOPP.SCLabel=%e9%83%a8%e5%b1%9e%e7%94%b3%e8%af%b7%e8%ae%b0%e5%bd%95%e6%9f%a5%e8%af%a2&EOPP.SCFName=ADMN_F202004220946516064176860&EOPP.SCSecondary=true&EOPP.SCPTcname=PT_PTPP_SCFNAV_BASEPAGE_SCR&FolderPath=PORTAL_ROOT_OBJECT.CO_MANAGER_SELF_SERVICE.HC_TIME_MANAGEMENT.HC_VIEW_TIME_MGR.HC_GP_ABS_MGRSS_HIST_GBL&IsFolder=false");
+  // Another: https://hr.wistron.com/psp/PRD/EMPLOYEE/HRMS/c/ROLE_MANAGER.GP_ABS_MGRSS_HIST.GBL?NAVSTACK=Clear&PORTALPARAM_PTCNAV=HC_GP_ABS_MGRSS_HIST_GBL&EOPP.SCNode=HRMS&EOPP.SCPortal=EMPLOYEE&EOPP.SCName=ADMN_REVIEW_AND_APPROVAL_WSH&EOPP.SCLabel=%e9%83%a8%e5%b1%9e%e7%94%b3%e8%af%b7%e8%ae%b0%e5%bd%95%e6%9f%a5%e8%af%a2&EOPP.SCFName=ADMN_F202004220946516064176860&EOPP.SCSecondary=true&EOPP.SCPTcname=PT_PTPP_SCFNAV_BASEPAGE_SCR&FolderPath=PORTAL_ROOT_OBJECT.CO_MANAGER_SELF_SERVICE.HC_TIME_MANAGEMENT.HC_VIEW_TIME_MGR.HC_GP_ABS_MGRSS_HIST_GBL&IsFolder=false
+  await page.goto("https://hr.wistron.com/psp/PRD/EMPLOYEE/HRMS/c/ROLE_MANAGER.GP_ABS_MGRSS_HIST.GBL?NAVSTACK=Clear&PORTALPARAM_PTCNAV=HC_GP_ABS_MGRSS_HIST_GBL&EOPP.SCNode=HRMS&EOPP.SCPortal=EMPLOYEE&EOPP.SCName=ADMN_MANAGER_REVIEWS&EOPP.SCLabel=%e9%83%a8%e5%b1%9e%e7%94%b3%e8%af%b7%e8%ae%b0%e5%bd%95%e6%9f%a5%e8%af%a2&EOPP.SCFName=ADMN_F201512302128141443830683&EOPP.SCSecondary=true&EOPP.SCPTcname=PT_PTPP_SCFNAV_BASEPAGE_SCR&FolderPath=PORTAL_ROOT_OBJECT.CO_MANAGER_SELF_SERVICE.HC_TIME_MANAGEMENT.HC_VIEW_TIME_MGR.HC_GP_ABS_MGRSS_HIST_GBL&IsFolder=false");
 
   // Click text=请假记录查询
   /*
@@ -57,6 +59,11 @@ const keypress = () => {
     console.log(`Member ${row}: "${name}", "${eid}", "${did}"`);
   }
   console.log(subs);
+
+  // Write to CSV file
+  const fo = fs.createWriteStream("records.csv");
+  fo.write('\uFEFF'); // Byte of Marker (BOM) of UTF-8 file
+  fo.write(`申请人, 部门 ID, 员工 ID, 名称, 假别名称, 开始日期, 开始时间, 结束日期, 结束时间, 总计时数, 代理人, 理由, 状态, T1, T2, T3\r\n`);
 
   //for (let row=1; row < nRows; row++) {
   for (let row of [2,4]) {//DEBUG
@@ -170,14 +177,14 @@ const keypress = () => {
       }
       // Get 签核历程 END
       console.log(`${applicant} ${who} ${假别名称} ${开始日期} ${开始时间} ~ ${结束日期} ${结束时间} ${总计时数} 小时 ${代理人} ${理由} ${状态} ${t1} ${t2} ${t3}`);
-
+      fo.write(`${applicant},,, ${who}, ${假别名称}, ${开始日期}, ${开始时间}, ${结束日期}, ${结束时间}, ${总计时数}, ${代理人}, ${理由}, ${状态}, ${t1}, ${t2}, ${t3}\r\n`);
       await page.frame({name: frnm}).click(`a[id="DERIVED_ABS_SS_LINK"]`);  // 返回请假纪录
       await page.waitForEvent('requestfinished');
       console.log("返回请假纪录 requestfinished");
     }
     // Get details of 请假记录 End
-    console.log("Press any key to continue...");
-    await keypress();
+//    console.log("Press any key to continue...");
+//    await keypress();
     //await idle(30000);
     // Get absence records end
 
