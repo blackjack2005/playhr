@@ -41,7 +41,7 @@ const keypress = () => {
   fo.write('\uFEFF'); // Byte of Marker (BOM) of UTF-8 file
   fo.write(`申请人, 部门 ID, 员工 ID, 名称, 假别名称, 开始日期, 开始时间, 结束日期, 结束时间, 总计时数, 代理人, 理由, 状态, T1, T2, T3\r\n`);
 
-  async function GetLeaveRecords(did, eid, employee) {
+  async function GetLeaveRecords(did, eid, employeeName) {
     // Get absence records begin
     /*
     await page.frame({
@@ -130,7 +130,7 @@ const keypress = () => {
         t3 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(3) td:nth-child(4)");
       }
       // Get 签核历程 END
-      fo.write(`${申请人}, ${did}, ${eid}, ${employee}, ${假别名称}, ${开始日期}, ${开始时间}, ${结束日期}, ${结束时间}, ${总计时数}, ${代理人}, ${理由}, ${状态}, ${t1}, ${t2}, ${t3}\r\n`);
+      fo.write(`${申请人}, ${did}, ${eid}, ${employeeName}, ${假别名称}, ${开始日期}, ${开始时间}, ${结束日期}, ${结束时间}, ${总计时数}, ${代理人}, ${理由}, ${状态}, ${t1}, ${t2}, ${t3}\r\n`);
       await page.frame({name: frnm}).click(`a[id="DERIVED_ABS_SS_LINK"]`);  // 返回请假纪录
       await page.waitForEvent('requestfinished');
       //console.log("返回请假纪录 requestfinished");
@@ -144,21 +144,27 @@ const keypress = () => {
 
   let subs = [];  // direct subordinates
   const nRows = await page.frame({name: 'TargetContent'}).locator("table.PSLEVEL1GRID tr").count();
-  console.log(`你有${nRows-1}個直接下屬`);
+  //console.log(`你有${nRows-1}個直接下屬`);
   for (let row=1; row < nRows; row++) {
     const tbl = await page.frame({name: 'TargetContent'}).locator(`table.PSLEVEL1GRID tr:nth-child(${row+1}) td`).elementHandles();
     let name = await tbl[1].innerText();
     let eid  = await tbl[2].innerText();
     let did  = await tbl[4].innerText();
-    subs.push({name:name, eid:eid, did:did});
-    console.log(`Member ${row}: "${name}", "${eid}", "${did}"`);
+    let mgr = false;
     const exp = await tbl[1].$('a');
-    if (exp){
+    if (exp) {
       console.log(`${name} is a manager.`);
+      mgr = true;
     }
-    //await page.frame({name: 'TargetContent'}).waitForSelector(`table.PSLEVEL1GRID tr:nth-child(${row+1}) td::nth-child(2) a`, {timeout:0});
+    subs.push({name:name, eid:eid, did:did, mgr:mgr});
+    //console.log(`Member ${row}: "${name}", "${eid}", "${did}"`);
   }
-  //console.log(subs);
+  console.log(`你有${subs.length}個直接下屬`, subs);
+  let l1Cnt = subs.length;  // 直接下属人数
+  let l1Idx = 0;
+  let l1Done = false;
+  let l2Cnt = 0;  // 直接下属的下属人数
+  let l2Idx = 0;
 
   //for (let row=1; row < nRows; row++) {
   for (let row of [2,4]) {//DEBUG
@@ -180,31 +186,20 @@ const keypress = () => {
     }).click('a[id="DERIVED_ABS_SS_BACK"]'); //click('text=返回到“直接报告者”');  //  {trial: true}
     console.log('返回到“直接报告者”');
   }
-
-  // Get subs' subs
-  //for (let row=1; row < nRows; row++) {
-  for (let row of [1,3]) {//DEBUG
-    console.log(`Get subs of row ${row} ${subs[row-1].name}`);
-    let sub = 1;
-    let numSub = 0;
+  //for (let row of [1,3]) {//DEBUG
+  while (true) {
+    console.log(`Get info of ${subs[l1Idx].name}`);
     await page.frame({
       name: 'TargetContent'
-    }).waitForSelector(`table.PSLEVEL1GRID tr:nth-child(${row+1}) td:nth-child(1) input:has-text("选择")`);
-
-    const tbl = await page.frame({name: 'TargetContent'}).locator(`table.PSLEVEL1GRID tr:nth-child(${row+1}) td`).elementHandles();
-    const btnExpand = await tbl[1].$('a');
-    if (!btnExpand) {
-      console.log(`${subs[row-1].name} is NOT a manager.`);
-      continue;
+    }).waitForSelector(`table.PSLEVEL1GRID tr:nth-child(${l1Idx+2}) td:nth-child(1) input:has-text("选择")`);
+    if (l1Done) {
+      await btnExpand.click();
+      await page.waitForEvent('requestfinished');
+      console.log("Click Expand Button requestfinished");
+  
+      const n2Rows = await page.frame({name: 'TargetContent'}).locator("table.PSLEVEL1GRID tr").count();
+      console.log(`${subs[row-1].name} 有 ${n2Rows-nRows} 個下屬`);
     }
-
-    await btnExpand.click();
-    await page.waitForEvent('requestfinished');
-    console.log("Click Expand Button requestfinished");
-
-    const n2Rows = await page.frame({name: 'TargetContent'}).locator("table.PSLEVEL1GRID tr").count();
-    console.log(`${subs[row-1].name} 有 ${n2Rows-nRows} 個下屬`);
-
     await page.frame({
       name: 'TargetContent'
     }).click(`table.PSLEVEL1GRID tr:nth-child(${row+1}) td:nth-child(1) input:has-text("选择")`);
