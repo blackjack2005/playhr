@@ -1,6 +1,5 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
-//const { assert } = require('console');
 
 function idle(ms) {
   return new Promise(resolve => setTimeout(() => resolve(), ms));
@@ -15,6 +14,7 @@ const keypress = () => {
 }
 
 (async () => {
+  const tmStart = new Date();
   const browser = await chromium.launch({
     headless: false
   });
@@ -58,6 +58,7 @@ const keypress = () => {
     //await idle(3600000);
     */
 
+    //NOTE: Don't use has-text
     await page.frame({
       name: 'TargetContent'
     }).click('a[id="GP_ABSHISTSS_VW$hviewall$0"]:has-text("全部查看")', {timeout:1000}).then( async ()=>{
@@ -84,7 +85,7 @@ const keypress = () => {
         const frmnvg = frame => {
           frame.frameElement().then(ele => {
             ele.getAttribute("name").then(fn => {
-              console.log(`framenavigated ${fn}`);
+              //console.log(`framenavigated ${fn}`);
               if ( fn.indexOf("ptModFrame_") === 0 ) {
                 page.removeListener('framenavigated', frmnvg);
                 resolve(fn);
@@ -163,7 +164,7 @@ const keypress = () => {
 
   for (let row=1; row < nRows; row++) {
   //for (let row of [2,3,4]) {//DEBUG
-    console.log(`Going into row ${row} ${subs[row-1].name}`);
+    //console.log(`Going into row ${row} ${subs[row-1].name}`);
     await page.frame({
       name: 'TargetContent'
     }).waitForSelector(`table.PSLEVEL1GRID tr:nth-child(${row+1}) td:nth-child(1) input:has-text("选择")`);
@@ -176,12 +177,12 @@ const keypress = () => {
     await GetLeaveRecords(subs[row-1].did, subs[row-1].eid, subs[row-1].name);
     await page.frame({name: 'TargetContent'}).click('a[id="DERIVED_ABS_SS_BACK"]'); //click('text=返回到“直接报告者”');
 
+    /*
     if ( subs[row-1].mgr ) {
       let l2Cnt = null;  // 直接下属的下属人数
       let l2Idx = null;
       do {
-        // Expand
-        await page.frame({name: 'TargetContent'}).click(`table.PSLEVEL1GRID tr:nth-child(${row+1}) td:nth-child(2) a`);
+        await page.frame({name:'TargetContent'}).click(`table.PSLEVEL1GRID tr:nth-child(${row+1}) td:nth-child(2) a`); // 展开
         t1 = new Date(); console.log(`${subs[row-1].name} 展开 clicked        `, t1);
         await page.waitForEvent('requestfinished');
         t2 = new Date(); console.log(`${subs[row-1].name} 展开 requestfinished`, t2, t2-t1);
@@ -208,21 +209,23 @@ const keypress = () => {
         l2Idx ++;
       } while (l2Idx <= l2Cnt);
     }
+    */
   }
 
   fo.end();
+  const tmFinish = new Date();
+  const msElapsed = tmFinish - tmStart;
+  console.log(`Time elapsed: ${msElapsed} ms`);
 
   console.log("Wait for page to close", new Date());
-  await page.waitForEvent('close', {timeout: 3600000}).then(()=>{
-    console.log("使用者结束")
+  await page.waitForEvent('close', {timeout: 3600}).then(()=>{
+    console.log("使用者自行结束")
   }, reason => {
-    console.warn("Time out. Auto close.");
+    console.log("Time out. Auto close.");
     //console.error(reason);
     return page.close();
   });
   console.log("Page close", new Date());
-  // Close page
-  //await page.close();
 
   // ---------------------
   await context.close();
