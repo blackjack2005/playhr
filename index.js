@@ -1,5 +1,6 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
+//const { assert } = require('console');
 
 function idle(ms) {
   return new Promise(resolve => setTimeout(() => resolve(), ms));
@@ -73,7 +74,8 @@ const keypress = () => {
     console.log(`From ${begin} till ${end} TA有${nAbsRows-1}個请假记录`);
 
     // Get details of 请假记录 Begin
-    for (let r=2; r <= nAbsRows && r<=4; r++) {//DEBUG
+    for (let r=2; r <= nAbsRows; r++) {
+    // for (let r=2; r <= nAbsRows && r<=4; r++) {//DEBUG
       const 申请人 = await page.frame({name: 'TargetContent'}).innerText(`table.PSLEVEL1GRID tr:nth-child(${r}) td:nth-child(6)`);
       await page.frame({name: 'TargetContent'}).click(`table.PSLEVEL1GRID tr:nth-child(${r}) td:nth-child(1) a`);
 
@@ -153,21 +155,14 @@ const keypress = () => {
     let mgr = false;
     const exp = await tbl[1].$('a');
     if (exp) {
-      console.log(`${name} is a manager.`);
       mgr = true;
     }
     subs.push({name:name, eid:eid, did:did, mgr:mgr});
-    //console.log(`Member ${row}: "${name}", "${eid}", "${did}"`);
   }
   console.log(`你有${subs.length}個直接下屬`, subs);
-  let l1Cnt = subs.length;  // 直接下属人数
-  let l1Idx = 0;
-  let l1Done = false;
-  let l2Cnt = 0;  // 直接下属的下属人数
-  let l2Idx = 0;
 
-  //for (let row=1; row < nRows; row++) {
-  for (let row of [2,4]) {//DEBUG
+  for (let row=1; row < nRows; row++) {
+  //for (let row of [2,3,4]) {//DEBUG
     console.log(`Going into row ${row} ${subs[row-1].name}`);
     await page.frame({
       name: 'TargetContent'
@@ -175,44 +170,44 @@ const keypress = () => {
     await page.frame({
       name: 'TargetContent'
     }).click(`table.PSLEVEL1GRID tr:nth-child(${row+1}) td:nth-child(1) input:has-text("选择")`);
-    console.log("选择 clicked");
+    let t1 = new Date(); console.log(`${subs[row-1].name} 选择 clicked        `, t1);
     await page.waitForEvent('requestfinished');
-    console.log("选择 requestfinished");
+    let t2 = new Date(); console.log(`${subs[row-1].name} 选择 requestfinished`, t2, t2-t1);
     await GetLeaveRecords(subs[row-1].did, subs[row-1].eid, subs[row-1].name);
+    await page.frame({name: 'TargetContent'}).click('a[id="DERIVED_ABS_SS_BACK"]'); //click('text=返回到“直接报告者”');
 
-    // Click text=返回到“直接报告者”
-    await page.frame({
-      name: 'TargetContent'
-    }).click('a[id="DERIVED_ABS_SS_BACK"]'); //click('text=返回到“直接报告者”');  //  {trial: true}
-    console.log('返回到“直接报告者”');
-  }
-  //for (let row of [1,3]) {//DEBUG
-  while (true) {
-    console.log(`Get info of ${subs[l1Idx].name}`);
-    await page.frame({
-      name: 'TargetContent'
-    }).waitForSelector(`table.PSLEVEL1GRID tr:nth-child(${l1Idx+2}) td:nth-child(1) input:has-text("选择")`);
-    if (l1Done) {
-      await btnExpand.click();
-      await page.waitForEvent('requestfinished');
-      console.log("Click Expand Button requestfinished");
-  
-      const n2Rows = await page.frame({name: 'TargetContent'}).locator("table.PSLEVEL1GRID tr").count();
-      console.log(`${subs[row-1].name} 有 ${n2Rows-nRows} 個下屬`);
+    if ( subs[row-1].mgr ) {
+      let l2Cnt = null;  // 直接下属的下属人数
+      let l2Idx = null;
+      do {
+        // Expand
+        await page.frame({name: 'TargetContent'}).click(`table.PSLEVEL1GRID tr:nth-child(${row+1}) td:nth-child(2) a`);
+        t1 = new Date(); console.log(`${subs[row-1].name} 展开 clicked        `, t1);
+        await page.waitForEvent('requestfinished');
+        t2 = new Date(); console.log(`${subs[row-1].name} 展开 requestfinished`, t2, t2-t1);
+        const nRows2 = await page.frame({name: 'TargetContent'}).locator("table.PSLEVEL1GRID tr").count();
+        const tmpCnt = nRows2 - nRows;
+        if ( l2Cnt === null ) {
+          l2Cnt = tmpCnt;
+          l2Idx = 1;
+          console.log(`${subs[row-1].name} 有 ${l2Cnt} 個下屬`);
+        } else {
+            console.assert(l2Cnt === tmpCnt);
+        }
+        const tbl = await page.frame({name: 'TargetContent'}).locator(`table.PSLEVEL1GRID tr:nth-child(${row+1+l2Idx}) td`).elementHandles();
+        let name = await tbl[1].innerText();
+        let eid  = await tbl[2].innerText();
+        let did  = await tbl[4].innerText();
+        await page.frame({name: 'TargetContent'}).click(`table.PSLEVEL1GRID tr:nth-child(${row+1+l2Idx}) td:nth-child(1) input:has-text("选择")`);
+        t1 = new Date(); console.log(`${name} 选择 clicked        `, t1);
+        await page.waitForEvent('requestfinished');
+        t2 = new Date(); console.log(`${name} 选择 requestfinished`, t2, t2-t1);
+        await GetLeaveRecords(did, eid, name);
+        await page.frame({name: 'TargetContent'}).click('a[id="DERIVED_ABS_SS_BACK"]'); //click('text=返回到“直接报告者”');
+        //if ( l2Idx === 1 ) l2Idx = l2Cnt-1;  //DEBUG
+        l2Idx ++;
+      } while (l2Idx <= l2Cnt);
     }
-    await page.frame({
-      name: 'TargetContent'
-    }).click(`table.PSLEVEL1GRID tr:nth-child(${row+1}) td:nth-child(1) input:has-text("选择")`);
-    console.log("选择 clicked");
-    await page.waitForEvent('requestfinished');
-    console.log("选择 requestfinished");
-    await GetLeaveRecords(subs[row-1].did, subs[row-1].eid, subs[row-1].name);
-
-    // Click text=返回到“直接报告者”
-    await page.frame({
-      name: 'TargetContent'
-    }).click('a[id="DERIVED_ABS_SS_BACK"]'); //click('text=返回到“直接报告者”');  //  {trial: true}
-    console.log('返回到“直接报告者”');
   }
 
   fo.end();
