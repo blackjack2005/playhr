@@ -45,20 +45,16 @@ const keypress = () => {
     await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_BGN_DT"]', '2021/01/01');
     await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_END_DT"]', '2021/12/31');
     await page.frame({name: 'TargetContent'}).click('input[id="DERIVED_ABS_SS_SRCH_BTN"]');
-    let t1 = new Date(); console.log(`开始日期                `, t1);
-    await page.waitForEvent('requestfinished', { timeout:3600000});
-    let t2 = new Date(); console.log(`开始日期 requestfinished`, t2, t2-t1);
-    //await page.waitForSelector('input[id="DERIVED_ABS_SS_BGN_DT"]:has-text("2020/01/01")')
-    /*await page.waitForLoadState("networkidle", {timeout:3600000});
-    console.log("2020/01/01 requestfinished");*/
-    //await idle(3600000);
+    let t1 = new Date(); console.log(`设定日期                `, t1);
+    await page.waitForEvent('requestfinished', { timeout:621000});
+    let t2 = new Date(); console.log(`设定日期 requestfinished`, t2, t2-t1);
 
     await page.frame({name: 'TargetContent'}).click('a[id="GP_ABSHISTSS_VW$hviewall$0"]', {timeout:1500}).then( async ()=>{
-      console.log("Has 全部查看 indeed.");
+      console.log("Clicked 全部查看 button.");
       await page.waitForEvent('requestfinished');
-      await idle(1000); //DEBUG why?
+      await idle(1000); //NOTE: Just don't know exactly when it is done.
     }, ()=>{
-      console.log("No 全部查看.");
+      console.log("No 全部查看 button.");
     });
     
     let begin = await page.frame({name: 'TargetContent'}).getAttribute('input[id="DERIVED_ABS_SS_BGN_DT"]', 'value');
@@ -94,11 +90,11 @@ const keypress = () => {
       const 开始时间 = await page.frame({name: frnm}).innerText(`#Z_DERIVED_ABS_S_START_TIME`);   // 08:20
       const 结束日期 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_END_DT`);        // 2021/09/14
       const 结束时间 = await page.frame({name: frnm}).innerText(`#Z_DERIVED_ABS_S_END_TIME`);     // 17:20
-      let 总计时数 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_DURATION_ABS`);  // 16.0
+      let 总计时数 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_DURATION_ABS`);    // 16.0
       
-      if (总计时数==="") {
+      if (总计时数.trim()==="") {
         // e.g. (38妇女节)
-        总计时数 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_BEGIN_DAY_HRS`);  // 4.0 开始日时数
+        总计时数 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_BEGIN_DAY_HRS`);     // 4.0 开始日时数
       }
 
       const 代理人 = await page.frame({name: frnm}).innerText(`#Z_PERS_SRCH_DEP_NAME_DISPLAY`);   // 庞美静 (TINA MJ PANG)
@@ -125,7 +121,6 @@ const keypress = () => {
       fo.write(`${申请人}, ${did}, ${eid}, ${employeeName}, ${假别名称}, ${开始日期}, ${开始时间}, ${结束日期}, ${结束时间}, ${总计时数}, ${代理人}, ${理由}, ${状态}, ${t1}, ${t2}, ${t3}\r\n`);
       await page.frame({name: frnm}).click(`a[id="DERIVED_ABS_SS_LINK"]`);  // 返回请假纪录
       await page.waitForEvent('requestfinished');
-      //console.log("返回请假纪录 requestfinished");
     }
     // console.log("Press any key to continue...");
     // await keypress();
@@ -207,7 +202,6 @@ const keypress = () => {
   });
   console.log("Page close", new Date());
 
-  // ---------------------
   await context.close();
   await browser.close();
 })();
