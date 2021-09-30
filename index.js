@@ -42,8 +42,8 @@ const keypress = () => {
   await page.goto("https://hr.wistron.com/psp/PRD/EMPLOYEE/HRMS/c/ROLE_MANAGER.GP_ABS_MGRSS_HIST.GBL?NAVSTACK=Clear&PORTALPARAM_PTCNAV=HC_GP_ABS_MGRSS_HIST_GBL&EOPP.SCNode=HRMS&EOPP.SCPortal=EMPLOYEE&EOPP.SCName=ADMN_MANAGER_REVIEWS&EOPP.SCLabel=%e9%83%a8%e5%b1%9e%e7%94%b3%e8%af%b7%e8%ae%b0%e5%bd%95%e6%9f%a5%e8%af%a2&EOPP.SCFName=ADMN_F201512302128141443830683&EOPP.SCSecondary=true&EOPP.SCPTcname=PT_PTPP_SCFNAV_BASEPAGE_SCR&FolderPath=PORTAL_ROOT_OBJECT.CO_MANAGER_SELF_SERVICE.HC_TIME_MANAGEMENT.HC_VIEW_TIME_MGR.HC_GP_ABS_MGRSS_HIST_GBL&IsFolder=false");
 
   async function GetLeaveRecords(did, eid, employeeName) {
-    await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_BGN_DT"]', '2021/01/01');
-    await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_END_DT"]', '2021/12/31');
+    await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_BGN_DT"]', '2020/01/01');
+    await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_END_DT"]', '2020/8/1');
     await page.frame({name: 'TargetContent'}).click('input[id="DERIVED_ABS_SS_SRCH_BTN"]');
     let t1 = new Date(); console.log(`设定日期                `, t1);
     await page.waitForEvent('requestfinished', { timeout:621000});
@@ -65,8 +65,13 @@ const keypress = () => {
     // Get details of 请假记录
     for (let r=2; r <= nAbsRows; r++) {
     //for (let r=2; r <= nAbsRows && r<=4; r++) {//DEBUG: Only get 3 of them.
-      const 申请人 = await page.frame({name: 'TargetContent'}).innerText(`table.PSLEVEL1GRID tr:nth-child(${r}) td:nth-child(6)`);
-      await page.frame({name: 'TargetContent'}).click(`table.PSLEVEL1GRID tr:nth-child(${r}) td:nth-child(1) a`);
+      const tbl = await page.frame({name: 'TargetContent'}).locator(`table.PSLEVEL1GRID tr:nth-child(${r}) td`).elementHandles();
+      const 假别名称 = await tbl[0].innerText();  // 特休假
+      const 申请人 = await tbl[5].innerText();    // 员工申请
+
+    //  const 申请人 = await page.frame({name: 'TargetContent'}).innerText(`table.PSLEVEL1GRID tr:nth-child(${r}) td:nth-child(6)`);
+    //  await page.frame({name: 'TargetContent'}).click(`table.PSLEVEL1GRID tr:nth-child(${r}) td:nth-child(1) a`);
+      await tbl[0].$('a').then(a => { return a.click() });
 
       // Get the desired iframe name
       const frnm = await new Promise(function(resolve, reject) {
@@ -93,8 +98,12 @@ const keypress = () => {
       let 总计时数 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_DURATION_ABS`);    // 16.0
       
       if (总计时数.trim()==="") {
+        const ele = await page.frame({name: frnm}).$(`#DERIVED_ABS_SS_BEGIN_DAY_HRS`);
+        if ( ele ) {
+          总计时数 = await ele.innerText()
+        }
         // e.g. (38妇女节)
-        总计时数 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_BEGIN_DAY_HRS`);     // 4.0 开始日时数
+        //总计时数 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_BEGIN_DAY_HRS`);     // 4.0 开始日时数
       }
 
       const 代理人 = await page.frame({name: frnm}).innerText(`#Z_PERS_SRCH_DEP_NAME_DISPLAY`);   // 庞美静 (TINA MJ PANG)
@@ -143,8 +152,8 @@ const keypress = () => {
     subs.push({name:name, eid:eid, did:did, mgr:mgr});
   }
 
-  for (let row=1; row < nRows; row++) {
-  //for (let row of [3,5]) {//DEBUG
+  //for (let row=1; row < nRows; row++) {
+  for (let row of [3,5]) {//DEBUG
     //console.log(`Going into row ${row} ${subs[row-1].name}`);
     await page.frame({name: 'TargetContent'}).click(`table.PSLEVEL1GRID tr:nth-child(${row+1}) td:nth-child(1) input`);  // input:has-text("选择")
     let t1 = new Date(); console.log(`${subs[row-1].name} 选择 clicked        `, t1);
