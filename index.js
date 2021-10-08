@@ -42,14 +42,41 @@ const keypress = () => {
   // Click text=请假记录查询
   await page.goto("https://hr.wistron.com/psp/PRD/EMPLOYEE/HRMS/c/ROLE_MANAGER.GP_ABS_MGRSS_HIST.GBL?NAVSTACK=Clear&PORTALPARAM_PTCNAV=HC_GP_ABS_MGRSS_HIST_GBL&EOPP.SCNode=HRMS&EOPP.SCPortal=EMPLOYEE&EOPP.SCName=ADMN_MANAGER_REVIEWS&EOPP.SCLabel=%e9%83%a8%e5%b1%9e%e7%94%b3%e8%af%b7%e8%ae%b0%e5%bd%95%e6%9f%a5%e8%af%a2&EOPP.SCFName=ADMN_F201512302128141443830683&EOPP.SCSecondary=true&EOPP.SCPTcname=PT_PTPP_SCFNAV_BASEPAGE_SCR&FolderPath=PORTAL_ROOT_OBJECT.CO_MANAGER_SELF_SERVICE.HC_TIME_MANAGEMENT.HC_VIEW_TIME_MGR.HC_GP_ABS_MGRSS_HIST_GBL&IsFolder=false");
 
+  async function waitTillReady() {
+    let cnt = 0;
+    while (true) {
+      const divWait = await page.frame({name: 'TargetContent'}).$('div#WAIT_win0');
+      const dvwtStyle = await divWait.getAttribute('style');
+      //console.log(dvwtStyle); //DEBUG
+      const dsp = /display: (.*?);/.exec(dvwtStyle);
+      if ( dsp[1] === 'block' ) {
+        cnt ++;
+      } else if ( dsp[1] === 'none' ) {
+        break;
+      }
+      await page.waitForTimeout(500);
+    }
+    console.log(`waitTillReady ${cnt}`); //DEBUG
+  }
+
   async function GetLeaveRecords(did, eid, employeeName) {
     await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_BGN_DT"]', '2020/1/1');
     await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_END_DT"]', '2021/11/1');
     let t1 = new Date(); console.log('设定日期 begin', t1);
-    await page.frame({name: 'TargetContent'}).click('input[id="DERIVED_ABS_SS_SRCH_BTN"]');
-    await page.waitForLoadState('networkidle', { timeout:621000 });
+    await page.frame({name: 'TargetContent'}).click('input[id="DERIVED_ABS_SS_SRCH_BTN"]'); // 刷新
+    //await page.waitForLoadState('networkidle', { timeout:621000 });
+    await waitTillReady();
     let t2 = new Date(); console.log('设定日期 end  ', t2, t2-t1);
 
+    const aViewAll = await page.frame({name: 'TargetContent'}).$('a[id="GP_ABSHISTSS_VW$hviewall$0"]'); // 全部查看
+    if ( aViewAll ) {
+      await aViewAll.click();
+      console.log("Clicked 全部查看 button.");
+      await waitTillReady();
+    } else {
+      console.log("No 全部查看 button.");
+    }
+    /*
     await page.frame({name: 'TargetContent'}).click('a[id="GP_ABSHISTSS_VW$hviewall$0"]', {timeout:1500}).then( async () => {
       console.log("Clicked 全部查看 button.");
       await page.waitForLoadState('networkidle');
@@ -58,7 +85,7 @@ const keypress = () => {
         const cstr = await page.frame({name: 'TargetContent'}).locator('span.PSGRIDCOUNTER').innerText();
         const d3 = /(.*?)-(.*?)\/(.*)/.exec(cstr); // 1-10/15 or 1/1
         const nAbsRows = await page.frame({name: 'TargetContent'}).locator("table.PSLEVEL1GRID tr").count();
-        assert(d3[3] == nAbsRows-1, 'table not ready? d3=%s rows=%d', d3[3], nAbsRows-1);
+        assert(d3[3] == nAbsRows-1, `table not ready? counter=${d3[3]} rows=${nAbsRows-1}`);
         if ( d3[3] == nAbsRows-1 ) {
           break;
         }
@@ -67,13 +94,14 @@ const keypress = () => {
     }, () => {
       console.log("No 全部查看 button.");
     });
+    */
 
     const counters = await page.frame({name: 'TargetContent'}).$('span.PSGRIDCOUNTER', {strict: true});
     const nAbsRows = await page.frame({name: 'TargetContent'}).locator("table.PSLEVEL1GRID tr").count();
     if ( counters ) {
       const cstr = await counters.innerText();
-      const d3 = /.*?\/(.*)/.exec(cstr); // 1-10/15 or 1/1
-      assert(d3[1]==nAbsRows-1, `table not ready? counter=${d3[1]} rows=${nAbsRows-1}`);
+      const ds = /.*?\/(.*)/.exec(cstr); // 1-10/15 or 1/1
+      assert(ds[1]==nAbsRows-1, `table not ready? counter=${ds[1]} rows=${nAbsRows-1}`);
     } else {
       assert(nAbsRows===0, 'weird');
     }
@@ -219,7 +247,7 @@ const keypress = () => {
   console.log(`Time elapsed: ${msElapsed} ms`);
 
   console.log("Wait for page to close", new Date());
-  await page.waitForEvent('close', {timeout: 36000}).then(()=>{
+  await page.waitForEvent('close', {timeout: 60000}).then(()=>{
     console.log("使用者自行结束")
   }, () => {
     console.log("Time out. Auto close.");
