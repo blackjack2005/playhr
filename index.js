@@ -150,10 +150,10 @@ const keypress = () => {
       const 开始时间 = await page.frame({name: frnm}).innerText(`#Z_DERIVED_ABS_S_START_TIME`);   // 08:20
       const 结束日期1 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_END_DT`);       // 2021/09/14
       const 结束时间 = await page.frame({name: frnm}).innerText(`#Z_DERIVED_ABS_S_END_TIME`);     // 17:20
-      assert(employeeName===who, 'who');
-      assert(假别名称===假别名称1, '假别名称');
-      assert(开始日期===开始日期1, '开始日期');
-      assert(结束日期===结束日期1, '结束日期');
+      assert(employeeName===who, `who "${employeeName}" !== "${who}"`);
+      assert(假别名称===假别名称1, `假别名称 "${假别名称}" !== "${假别名称1}"`);
+      assert(开始日期===开始日期1, `开始日期 "${开始日期}" !== "${开始日期1}"`);
+      assert(结束日期===结束日期1, `结束日期 "${结束日期}" !== "${结束日期1}"`);
 
       const 代理人 = await page.frame({name: frnm}).innerText(`#Z_PERS_SRCH_DEP_NAME_DISPLAY`);   // 庞美静 (TINA MJ PANG)
       const 理由 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_COMMENTS`);          // 家中有事
@@ -170,7 +170,7 @@ const keypress = () => {
         t3 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(3) td:nth-child(4)");
       }
 
-      fo.write(`${申请人},${did},${eid},${employeeName},${假别名称},${开始日期},${开始时间},${结束日期},${结束时间},${总计时数},${代理人.trim()},${理由.trim()},${状态},${t1},${t2},${t3}\r\n`);
+      fo.write(`${申请人},${did},${eid},${employeeName},${假别名称},${开始日期},${开始时间.trim()},${结束日期},${结束时间.trim()},${总计时数},${代理人.trim()},${理由.trim()},${状态},${t1},${t2},${t3.trim()}\r\n`);
       await page.frame({name: frnm}).click(`a[id="DERIVED_ABS_SS_LINK"]`);  // 返回请假纪录
       await page.waitForEvent('requestfinished');
     }
