@@ -47,7 +47,6 @@ const keypress = () => {
     while (true) {
       const divWait = await page.frame({name: 'TargetContent'}).$('div#WAIT_win0');
       const dvwtStyle = await divWait.getAttribute('style');
-      //console.log(dvwtStyle); //DEBUG
       const dsp = /display: (.*?);/.exec(dvwtStyle);
       if ( dsp[1] === 'block' ) {
         cnt ++;
@@ -64,7 +63,6 @@ const keypress = () => {
     await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_END_DT"]', '2021/11/1');
     let t1 = new Date(); console.log('设定日期 begin', t1);
     await page.frame({name: 'TargetContent'}).click('input[id="DERIVED_ABS_SS_SRCH_BTN"]'); // 刷新
-    //await page.waitForLoadState('networkidle', { timeout:621000 });
     await waitTillReady();
     let t2 = new Date(); console.log('设定日期 end  ', t2, t2-t1);
 
@@ -76,25 +74,6 @@ const keypress = () => {
     } else {
       console.log("No 全部查看 button.");
     }
-    /*
-    await page.frame({name: 'TargetContent'}).click('a[id="GP_ABSHISTSS_VW$hviewall$0"]', {timeout:1500}).then( async () => {
-      console.log("Clicked 全部查看 button.");
-      await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(500);
-      while (true) {
-        const cstr = await page.frame({name: 'TargetContent'}).locator('span.PSGRIDCOUNTER').innerText();
-        const d3 = /(.*?)-(.*?)\/(.*)/.exec(cstr); // 1-10/15 or 1/1
-        const nAbsRows = await page.frame({name: 'TargetContent'}).locator("table.PSLEVEL1GRID tr").count();
-        assert(d3[3] == nAbsRows-1, `table not ready? counter=${d3[3]} rows=${nAbsRows-1}`);
-        if ( d3[3] == nAbsRows-1 ) {
-          break;
-        }
-        await page.waitForTimeout(500);
-      }
-    }, () => {
-      console.log("No 全部查看 button.");
-    });
-    */
 
     const counters = await page.frame({name: 'TargetContent'}).$('span.PSGRIDCOUNTER', {strict: true});
     const nAbsRows = await page.frame({name: 'TargetContent'}).locator("table.PSLEVEL1GRID tr").count();
@@ -114,17 +93,17 @@ const keypress = () => {
     for (let r=2; r <= nAbsRows; r++) {
     //for (let r=2; r <= nAbsRows && r<=4; r++) {//DEBUG: Only get 3 of them.
       const tds = await page.frame({name: 'TargetContent'}).locator(`table.PSLEVEL1GRID tr:nth-child(${r}) td`).elementHandles();
-      const 假别名称 = await tds[0].innerText();  // 特休假
-      const 状态 = await tds[1].innerText();      // 已批准
-      const 开始日期 = await tds[2].innerText();  // 2021/09/30
-      const 结束日期 = await tds[3].innerText();  // 2021/09/30
-      const 总计时数0 = await tds[4].innerText(); // 8 小时
+      const 假别名称 = await tds[0].innerText().then(t=>t.trim());  // 特休假
+      const 状态 = await tds[1].innerText().then(t=>t.trim());      // 已批准
+      const 开始日期 = await tds[2].innerText().then(t=>t.trim());  // 2021/09/30
+      const 结束日期 = await tds[3].innerText().then(t=>t.trim());  // 2021/09/30
+      const 总计时数0 = await tds[4].innerText().then(t=>t.trim()); // 8 小时
       let 总计时数 = '???';
       const tmpHr = /(.*?) 小时/.exec(总计时数0);
       if ( tmpHr ) {
         总计时数 = tmpHr[1];
       }
-      const 申请人 = await tds[5].innerText();    // 员工申请
+      const 申请人 = await tds[5].innerText().then(t=>t.trim());    // 员工申请
 
       await page.frame({name: 'TargetContent'}).click(`table.PSLEVEL1GRID tr:nth-child(${r}) td:nth-child(1) a`);
 
@@ -144,19 +123,19 @@ const keypress = () => {
         page.on('framenavigated', frmnvg);
       });
 
-      const who = await page.frame({name: frnm}).innerText(`#PERSON_NAME_NAME`);  // 张翀 (JACK C ZHANG)
-      const 假别名称1 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_PIN_TAKE_NUM`); // 特休假
-      const 开始日期1 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_BGN_DT`);       // 2021/09/13
-      const 开始时间 = await page.frame({name: frnm}).innerText(`#Z_DERIVED_ABS_S_START_TIME`);   // 08:20
-      const 结束日期1 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_END_DT`);       // 2021/09/14
-      const 结束时间 = await page.frame({name: frnm}).innerText(`#Z_DERIVED_ABS_S_END_TIME`);     // 17:20
+      const who = await page.frame({name: frnm}).innerText(`#PERSON_NAME_NAME`).then(t=>t.trim());  // 张翀 (JACK C ZHANG)
+      const 假别名称1 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_PIN_TAKE_NUM`).then(t=>t.trim()); // 特休假
+      const 开始日期1 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_BGN_DT`).then(t=>t.trim());       // 2021/09/13
+      const 开始时间 = await page.frame({name: frnm}).innerText(`#Z_DERIVED_ABS_S_START_TIME`).then(t=>t.trim());   // 08:20
+      const 结束日期1 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_END_DT`).then(t=>t.trim());       // 2021/09/14
+      const 结束时间 = await page.frame({name: frnm}).innerText(`#Z_DERIVED_ABS_S_END_TIME`).then(t=>t.trim());     // 17:20
       assert(employeeName===who, `who "${employeeName}" !== "${who}"`);
       assert(假别名称===假别名称1, `假别名称 "${假别名称}" !== "${假别名称1}"`);
       assert(开始日期===开始日期1, `开始日期 "${开始日期}" !== "${开始日期1}"`);
       assert(结束日期===结束日期1, `结束日期 "${结束日期}" !== "${结束日期1}"`);
 
-      const 代理人 = await page.frame({name: frnm}).innerText(`#Z_PERS_SRCH_DEP_NAME_DISPLAY`);   // 庞美静 (TINA MJ PANG)
-      const 理由 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_COMMENTS`);          // 家中有事
+      const 代理人 = await page.frame({name: frnm}).innerText(`#Z_PERS_SRCH_DEP_NAME_DISPLAY`).then(t=>t.trim());   // 庞美静 (TINA MJ PANG)
+      const 理由 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_COMMENTS`).then(t=>t.trim());          // 家中有事
 
       // Get 签核历程
       let t1 = "" // Applicant time
@@ -165,12 +144,12 @@ const keypress = () => {
       const nApvCnt = await page.frame({name: frnm}).locator("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr").count();
       //console.log(`TA有${nApvCnt}個签核历程`);
       if (nApvCnt === 3) {
-        t1 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(1) td:nth-child(4)");
-        t2 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(2) td:nth-child(4)");
-        t3 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(3) td:nth-child(4)");
+        t1 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(1) td:nth-child(4)").then(t=>t.trim());
+        t2 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(2) td:nth-child(4)").then(t=>t.trim());
+        t3 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(3) td:nth-child(4)").then(t=>t.trim());
       }
 
-      fo.write(`${申请人},${did},${eid},${employeeName},${假别名称},${开始日期},${开始时间.trim()},${结束日期},${结束时间.trim()},${总计时数},${代理人.trim()},${理由.trim()},${状态},${t1},${t2},${t3.trim()}\r\n`);
+      fo.write(`${申请人},${did},${eid},${employeeName},${假别名称},${开始日期},${开始时间},${结束日期},${结束时间},${总计时数},${代理人},${理由},${状态},${t1},${t2},${t3}\r\n`);
       await page.frame({name: frnm}).click(`a[id="DERIVED_ABS_SS_LINK"]`);  // 返回请假纪录
       await page.waitForEvent('requestfinished');
     }
