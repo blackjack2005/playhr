@@ -108,11 +108,10 @@ const keypress = () => {
       await page.frame({name: 'TargetContent'}).click(`table.PSLEVEL1GRID tr:nth-child(${r}) td:nth-child(1) a`);
 
       // Get the desired iframe name
-      const frnm = await new Promise(function(resolve, reject) {
+      const frnm = await new Promise(resolve => {
         const frmnvg = frame => {
           frame.frameElement().then(ele => {
             ele.getAttribute("name").then(fn => {
-              //console.log(`framenavigated ${fn}`);
               if ( fn.indexOf("ptModFrame_") === 0 ) {
                 page.removeListener('framenavigated', frmnvg);
                 resolve(fn);
@@ -138,20 +137,24 @@ const keypress = () => {
       const 理由 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_COMMENTS`).then(t=>t.trim());          // 家中有事
 
       // Get 签核历程
-      let t1 = "" // Applicant time
-      , t2 = ""   // Proxy time
-      , t3 = "";  // Approver time
+      let a1 = "" // Applicant time
+      , a2 = ""   // Proxy time
+      , a3 = "";  // Approver time
       const nApvCnt = await page.frame({name: frnm}).locator("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr").count();
       //console.log(`TA有${nApvCnt}個签核历程`);
       if (nApvCnt === 3) {
-        t1 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(1) td:nth-child(4)").then(t=>t.trim());
-        t2 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(2) td:nth-child(4)").then(t=>t.trim());
-        t3 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(3) td:nth-child(4)").then(t=>t.trim());
+        a1 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(1) td:nth-child(4)").then(t=>t.trim());
+        a2 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(2) td:nth-child(4)").then(t=>t.trim());
+        a3 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(3) td:nth-child(4)").then(t=>t.trim());
       }
 
-      fo.write(`${申请人},${did},${eid},${employeeName},${假别名称},${开始日期},${开始时间},${结束日期},${结束时间},${总计时数},${代理人},${理由},${状态},${t1},${t2},${t3}\r\n`);
+      fo.write(`${申请人},${did},${eid},${employeeName},${假别名称},${开始日期},${开始时间},${结束日期},${结束时间},${总计时数},${代理人},${理由},${状态},${a1},${a2},${a3}\r\n`);
       await page.frame({name: frnm}).click(`a[id="DERIVED_ABS_SS_LINK"]`);  // 返回请假纪录
-      await page.waitForEvent('requestfinished');
+      t1 = new Date(); console.log('返回请假纪录 begin', t1);
+      while ( page.frame({name: frnm}) ) {
+        await page.waitForTimeout(500);
+      }
+      t2 = new Date(); console.log('返回请假纪录 end  ', t2, t2-t1);
     }
     // console.log("Press any key to continue...");
     // await keypress();
