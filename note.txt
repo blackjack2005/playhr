@@ -1,0 +1,11 @@
+Playwright的安裝非常簡單，兩步走。
+
+# 安裝playwright庫
+py -m pip install playwright
+
+# 安裝瀏覽器驅動檔案（安裝過程稍微有點慢）
+py -m playwright install
+
+# 錄製
+py -m playwright codegen --target javascript -o index.js -b chromium "https://hr.wistron.com/psp/PRD/?cmd=login&languageCd=ZHS&"
+

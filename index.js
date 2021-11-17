@@ -34,7 +34,7 @@ const keypress = () => {
   // Fill input[name="userid"]
   await page.fill('input[name="userid"]', '8106062');
   // Fill input[name="pwd"]
-  await page.fill('input[name="pwd"]', '2022Indepp');
+  await page.fill('input[name="pwd"]', '22Indepp20');
   // Click text=登录
   //await page.click('text=登录');
   await page.click('input[name="Submit"]');
@@ -134,7 +134,7 @@ const keypress = () => {
       assert(结束日期===结束日期1, `结束日期 "${结束日期}" !== "${结束日期1}"`);
 
       const 代理人 = await page.frame({name: frnm}).innerText(`#Z_PERS_SRCH_DEP_NAME_DISPLAY`).then(t=>t.trim());   // 庞美静 (TINA MJ PANG)
-      const 理由 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_COMMENTS`).then(t=>t.trim());          // 家中有事
+      const 理由 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_COMMENTS`).then(t=>t.replace(/\n/g, '').trim()); // 家中有事
 
       // Get 签核历程
       let a1 = "" // Applicant time
