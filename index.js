@@ -59,12 +59,14 @@ const keypress = () => {
   }
 
   async function GetLeaveRecords(did, eid, employeeName) {
+    /*
     await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_BGN_DT"]', '2020/1/1');
     await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_END_DT"]', '2021/11/1');
     let t1 = new Date(); console.log('设定日期 begin', t1);
     await page.frame({name: 'TargetContent'}).click('input[id="DERIVED_ABS_SS_SRCH_BTN"]'); // 刷新
     await waitTillReady();
     let t2 = new Date(); console.log('设定日期 end  ', t2, t2-t1);
+    */
 
     const aViewAll = await page.frame({name: 'TargetContent'}).$('a[id="GP_ABSHISTSS_VW$hviewall$0"]'); // 全部查看
     if ( aViewAll ) {
@@ -134,7 +136,7 @@ const keypress = () => {
       assert(结束日期===结束日期1, `结束日期 "${结束日期}" !== "${结束日期1}"`);
 
       const 代理人 = await page.frame({name: frnm}).innerText(`#Z_PERS_SRCH_DEP_NAME_DISPLAY`).then(t=>t.trim());   // 庞美静 (TINA MJ PANG)
-      const 理由 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_COMMENTS`).then(t=>t.replace(/\n/g, '').trim()); // 家中有事
+      const 理由 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_COMMENTS`).then(t=>t.replace(/\n/g, ' ').trim()); // 家中有事
 
       // Get 签核历程
       let a1 = "" // Applicant time
