@@ -34,13 +34,14 @@ const keypress = () => {
   // Fill input[name="userid"]
   await page.fill('input[name="userid"]', '8106062');
   // Fill input[name="pwd"]
-  await page.fill('input[name="pwd"]', '22Indepp20');
+  await page.fill('input[name="pwd"]', '23indePp22');
   // Click text=登录
   //await page.click('text=登录');
   await page.click('input[name="Submit"]');
 
   // Click text=请假记录查询
-  await page.goto("https://hr.wistron.com/psp/PRD/EMPLOYEE/HRMS/c/ROLE_MANAGER.GP_ABS_MGRSS_HIST.GBL?NAVSTACK=Clear&PORTALPARAM_PTCNAV=HC_GP_ABS_MGRSS_HIST_GBL&EOPP.SCNode=HRMS&EOPP.SCPortal=EMPLOYEE&EOPP.SCName=ADMN_MANAGER_REVIEWS&EOPP.SCLabel=%e9%83%a8%e5%b1%9e%e7%94%b3%e8%af%b7%e8%ae%b0%e5%bd%95%e6%9f%a5%e8%af%a2&EOPP.SCFName=ADMN_F201512302128141443830683&EOPP.SCSecondary=true&EOPP.SCPTcname=PT_PTPP_SCFNAV_BASEPAGE_SCR&FolderPath=PORTAL_ROOT_OBJECT.CO_MANAGER_SELF_SERVICE.HC_TIME_MANAGEMENT.HC_VIEW_TIME_MGR.HC_GP_ABS_MGRSS_HIST_GBL&IsFolder=false");
+  const lrq = "https://hr.wistron.com/psp/PRD/EMPLOYEE/HRMS/c/ROLE_MANAGER.GP_ABS_MGRSS_HIST.GBL?NAVSTACK=Clear&PORTALPARAM_PTCNAV=HC_GP_ABS_MGRSS_HIST_GBL&EOPP.SCNode=HRMS&EOPP.SCPortal=EMPLOYEE&EOPP.SCName=ADMN_MANAGER_REVIEWS&EOPP.SCLabel=%e9%83%a8%e5%b1%9e%e7%94%b3%e8%af%b7%e8%ae%b0%e5%bd%95%e6%9f%a5%e8%af%a2&EOPP.SCFName=ADMN_F201512302128141443830683&EOPP.SCSecondary=true&EOPP.SCPTcname=PT_PTPP_SCFNAV_BASEPAGE_SCR&FolderPath=PORTAL_ROOT_OBJECT.CO_MANAGER_SELF_SERVICE.HC_TIME_MANAGEMENT.HC_VIEW_TIME_MGR.HC_GP_ABS_MGRSS_HIST_GBL&IsFolder=false";
+  await page.goto(lrq);
 
   async function waitTillReady() {
     let cnt = 0;
@@ -187,7 +188,8 @@ const keypress = () => {
     await page.waitForEvent('requestfinished');
     let t2 = new Date(); console.log(`${subs[row-1].name} 选择 end  `, t2, t2-t1);
     await GetLeaveRecords(subs[row-1].did, subs[row-1].eid, subs[row-1].name);
-    await page.frame({name: 'TargetContent'}).click('a[id="DERIVED_ABS_SS_BACK"]'); //click('text=返回到“直接报告者”');
+    //await page.frame({name: 'TargetContent'}).click('a[id="DERIVED_ABS_SS_BACK"]'); //click('text=返回到“直接报告者”');
+    await page.goto(lrq);
 
     if ( subs[row-1].mgr ) {
       let l2Cnt = null;  // 直接下属的下属人数
@@ -217,7 +219,8 @@ const keypress = () => {
         await page.waitForEvent('requestfinished');
         t2 = new Date(); console.log(`${name} 选择 end  `, t2, t2-t1);
         await GetLeaveRecords(did, eid, name);
-        await page.frame({name: 'TargetContent'}).click('a[id="DERIVED_ABS_SS_BACK"]'); //click('text=返回到“直接报告者”');
+        //await page.frame({name: 'TargetContent'}).click('a[id="DERIVED_ABS_SS_BACK"]'); //click('text=返回到“直接报告者”');
+        await page.goto(lrq);
         //if ( l2Idx === 3 ) l2Idx = l2Cnt-1;  //DEBUG
         l2Idx ++;
       } while (l2Idx <= l2Cnt);
