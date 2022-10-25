@@ -19,9 +19,13 @@ const keypress = () => {
 
 (async () => {
   // Output to CSV file
-  const fo = fs.createWriteStream("records.csv");
+  let sd = new Date(请假开始日);
+  let sdt = new Date(sd.getTime() - (sd.getTimezoneOffset() * 60000)).toISOString().substr(0, 10);
+  let ed = new Date(请假截止日);
+  let edt = new Date(ed.getTime() - (ed.getTimezoneOffset() * 60000)).toISOString().substr(0, 10);
+  const fo = fs.createWriteStream(`leave_records ${sdt}~${edt}.csv`);
   fo.write('\uFEFF'); // Byte of Marker (BOM) of UTF-8 file
-  fo.write(`申请人, 部门 ID, 员工 ID, 姓名, 假别, 开始日期, 开始时间, 结束日期, 结束时间, 总计时数, 代理人, 理由, 状态, T1, T2, T3\r\n`);
+  fo.write(`申请人, 部门 ID, 员工 ID, 姓名, 假别, 开始日期, 开始时间, 结束日期, 结束时间, 总计时数, 代理人, 理由, 状态\r\n`);
 
   const tmStart = new Date();
   const browser = await chromium.launch({
@@ -63,14 +67,12 @@ const keypress = () => {
   }
 
   async function GetLeaveRecords(did, eid, employeeName) {
-    /** */
     await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_BGN_DT"]', 请假开始日);
     await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_END_DT"]', 请假截止日);
     let t1 = new Date(); console.log('设定日期 begin', t1);
     await page.frame({name: 'TargetContent'}).click('input[id="DERIVED_ABS_SS_SRCH_BTN"]'); // 刷新
     await waitTillReady();
     let t2 = new Date(); console.log('设定日期 end  ', t2, t2-t1);
-    /**/
 
     const aViewAll = await page.frame({name: 'TargetContent'}).$('a[id="GP_ABSHISTSS_VW$hviewall$0"]'); // 全部查看
     if ( aViewAll ) {
@@ -142,19 +144,7 @@ const keypress = () => {
       const 代理人 = await page.frame({name: frnm}).innerText(`#Z_PERS_SRCH_DEP_NAME_DISPLAY`).then(t=>t.trim());   // 庞美静 (TINA MJ PANG)
       const 理由 = await page.frame({name: frnm}).innerText(`#DERIVED_ABS_SS_COMMENTS`).then(t=>t.replace(/\n/g, ' ').trim()); // 家中有事
 
-      // Get 签核历程
-      let a1 = "" // Applicant time
-      , a2 = ""   // Proxy time
-      , a3 = "";  // Approver time
-      const nApvCnt = await page.frame({name: frnm}).locator("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr").count();
-      //console.log(`TA有${nApvCnt}個签核历程`);
-      if (nApvCnt === 3) {
-        a1 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(1) td:nth-child(4)").then(t=>t.trim());
-        a2 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(2) td:nth-child(4)").then(t=>t.trim());
-        a3 = await page.frame({name: frnm}).innerText("table[id='tdgbrZ_GP_ABS_SS_STA$0'] tr:nth-child(3) td:nth-child(4)").then(t=>t.trim());
-      }
-
-      fo.write(`${申请人},${did},${eid},${employeeName},${假别名称},${开始日期},${开始时间},${结束日期},${结束时间},${总计时数},${代理人},${理由},${状态},${a1},${a2},${a3}\r\n`);
+      fo.write(`${申请人},${did},${eid},${employeeName},${假别名称},${开始日期},${开始时间},${结束日期},${结束时间},${总计时数},${代理人},${理由},${状态}\r\n`);
       await page.frame({name: frnm}).click(`a[id="DERIVED_ABS_SS_LINK"]`);  // 返回请假纪录
       t1 = new Date(); console.log('返回请假纪录 begin', t1);
       while ( page.frame({name: frnm}) ) {
