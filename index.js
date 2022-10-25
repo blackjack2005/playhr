@@ -2,6 +2,9 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const assert = require('assert');
 
+const 请假开始日 = '2022/9/26';
+const 请假截止日 = '2022/10/25';
+
 function idle(ms) {
   return new Promise(resolve => setTimeout(() => resolve(), ms));
 }
@@ -60,14 +63,14 @@ const keypress = () => {
   }
 
   async function GetLeaveRecords(did, eid, employeeName) {
-    /*
-    await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_BGN_DT"]', '2020/1/1');
-    await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_END_DT"]', '2021/11/1');
+    /** */
+    await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_BGN_DT"]', 请假开始日);
+    await page.frame({name: 'TargetContent'}).fill('input[id="DERIVED_ABS_SS_END_DT"]', 请假截止日);
     let t1 = new Date(); console.log('设定日期 begin', t1);
     await page.frame({name: 'TargetContent'}).click('input[id="DERIVED_ABS_SS_SRCH_BTN"]'); // 刷新
     await waitTillReady();
     let t2 = new Date(); console.log('设定日期 end  ', t2, t2-t1);
-    */
+    /**/
 
     const aViewAll = await page.frame({name: 'TargetContent'}).$('a[id="GP_ABSHISTSS_VW$hviewall$0"]'); // 全部查看
     if ( aViewAll ) {
