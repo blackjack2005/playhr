@@ -2,8 +2,8 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const assert = require('assert');
 
-const 请假开始日 = '2022/9/26';
-const 请假截止日 = '2022/10/25';
+const 请假开始日 = '2022/10/26';
+const 请假截止日 = '2022/11/25';
 
 function idle(ms) {
   return new Promise(resolve => setTimeout(() => resolve(), ms));
@@ -23,7 +23,9 @@ const keypress = () => {
   let sdt = new Date(sd.getTime() - (sd.getTimezoneOffset() * 60000)).toISOString().substr(0, 10);
   let ed = new Date(请假截止日);
   let edt = new Date(ed.getTime() - (ed.getTimezoneOffset() * 60000)).toISOString().substr(0, 10);
-  const fo = fs.createWriteStream(`leave_records ${sdt}~${edt}.csv`);
+  let cd = new Date();
+  let cdt = new Date(cd.getTime() - (cd.getTimezoneOffset() * 60000)).toISOString().substr(0, 10);
+  const fo = fs.createWriteStream(`leave_records ${sdt}~${edt}@${cdt}.csv`);
   fo.write('\uFEFF'); // Byte of Marker (BOM) of UTF-8 file
   fo.write(`申请人, 部门 ID, 员工 ID, 姓名, 假别, 开始日期, 开始时间, 结束日期, 结束时间, 总计时数, 代理人, 理由, 状态\r\n`);
 
@@ -41,10 +43,11 @@ const keypress = () => {
   // Fill input[name="userid"]
   await page.fill('input[name="userid"]', '8106062');
   // Fill input[name="pwd"]
-  await page.fill('input[name="pwd"]', '23indePp22');
+  await page.fill('input[name="pwd"]', '22indePp23');
   // Click text=登录
   //await page.click('text=登录');
   await page.click('input[name="Submit"]');
+  assert( page.url() === "https://hr.wistron.com/psc/PRD/EMPLOYEE/HRMS/c/NUI_FRAMEWORK.PT_LANDINGPAGE.GBL?", "Login failed." );
 
   // Click text=请假记录查询
   const lrq = "https://hr.wistron.com/psp/PRD/EMPLOYEE/HRMS/c/ROLE_MANAGER.GP_ABS_MGRSS_HIST.GBL?NAVSTACK=Clear&PORTALPARAM_PTCNAV=HC_GP_ABS_MGRSS_HIST_GBL&EOPP.SCNode=HRMS&EOPP.SCPortal=EMPLOYEE&EOPP.SCName=ADMN_MANAGER_REVIEWS&EOPP.SCLabel=%e9%83%a8%e5%b1%9e%e7%94%b3%e8%af%b7%e8%ae%b0%e5%bd%95%e6%9f%a5%e8%af%a2&EOPP.SCFName=ADMN_F201512302128141443830683&EOPP.SCSecondary=true&EOPP.SCPTcname=PT_PTPP_SCFNAV_BASEPAGE_SCR&FolderPath=PORTAL_ROOT_OBJECT.CO_MANAGER_SELF_SERVICE.HC_TIME_MANAGEMENT.HC_VIEW_TIME_MGR.HC_GP_ABS_MGRSS_HIST_GBL&IsFolder=false";
